@@ -8,7 +8,10 @@ import Board from './components/Board'
 import Backlog from './components/Backlog'
 import Sprints from './components/Sprints'
 import CalendarView from './components/CalendarView'
-import QuickAddDialog from './components/dialogs/QuickAddDialog'
+import GlobalCreateButton from './components/GlobalCreateButton'
+import WorkItemDialog from './components/dialogs/WorkItemDialog'
+import NewSprintDialog from './components/dialogs/NewSprintDialog'
+import NewProjectDialog from './components/dialogs/NewProjectDialog'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(loadToken)
@@ -19,7 +22,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('board')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [createType, setCreateType] = useState<'item' | 'sprint' | 'project' | null>(null)
 
   // Load projects when user signs in
   useEffect(() => {
@@ -116,16 +119,34 @@ export default function App() {
 
   const selectedProject = projects.find(p => p.id === selectedId)
 
+  async function handleCreateSprintGlobal(data: Omit<Sprint, 'id' | 'projectId'>, projectId: string) {
+    if (!token) return
+    const sprint = await api.createSprint(token, projectId, data)
+    if (projectId === selectedId) setSprints(s => [...s, sprint])
+  }
+
   return (
     <div style={layout}>
-      {showQuickAdd && selectedId && token && (
-        <QuickAddDialog
+      {createType === 'item' && selectedId && (
+        <WorkItemDialog
+          item={null}
+          sprints={sprints}
+          onSave={d => handleCreateItem(d)}
+          onClose={() => setCreateType(null)}
+        />
+      )}
+      {createType === 'sprint' && selectedId && (
+        <NewSprintDialog
           projects={projects}
           defaultProjectId={selectedId}
-          defaultSprints={sprints}
-          token={token}
-          onSave={handleCreateItem}
-          onClose={() => setShowQuickAdd(false)}
+          onSave={handleCreateSprintGlobal}
+          onClose={() => setCreateType(null)}
+        />
+      )}
+      {createType === 'project' && (
+        <NewProjectDialog
+          onCreate={handleCreateProject}
+          onClose={() => setCreateType(null)}
         />
       )}
       <ProjectList
@@ -166,14 +187,13 @@ export default function App() {
                 ))}
               </div>
               {loading && <span style={spinner}>Loading…</span>}
-              <button style={quickAddBtn} onClick={() => setShowQuickAdd(true)} title="Quick add work item">+ Add Item</button>
+              <GlobalCreateButton onCreate={setCreateType} />
             </div>
 
             {tab === 'board' && (
               <Board
                 workItems={workItems}
                 sprints={sprints}
-                onCreate={handleCreateItem}
                 onUpdate={handleUpdateItem}
                 onDelete={handleDeleteItem}
               />
@@ -182,7 +202,6 @@ export default function App() {
               <Backlog
                 workItems={workItems}
                 sprints={sprints}
-                onCreate={handleCreateItem}
                 onUpdate={handleUpdateItem}
                 onDelete={handleDeleteItem}
               />
@@ -224,7 +243,6 @@ const tabs: React.CSSProperties = { display: 'flex', gap: 4 }
 const tabBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#64748b', fontSize: 14, fontWeight: 500, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' }
 const tabActive: React.CSSProperties = { background: '#1e293b', color: '#f8fafc' }
 const spinner: React.CSSProperties = { marginLeft: 'auto', color: '#475569', fontSize: 13 }
-const quickAddBtn: React.CSSProperties = { marginLeft: 'auto', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const placeholder: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const placeholderText: React.CSSProperties = { color: '#475569', fontSize: 15 }
 const errorBar: React.CSSProperties = { background: '#7f1d1d', color: '#fca5a5', fontSize: 13, padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }

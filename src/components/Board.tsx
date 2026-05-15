@@ -18,7 +18,6 @@ interface Props {
   sprints: Sprint[]
   onUpdate: (item: WorkItem) => Promise<void>
   onDelete: (item: WorkItem) => Promise<void>
-  onCreate: (data: Omit<WorkItem, 'id' | 'projectId'>) => Promise<void>
 }
 
 const PRIORITY_COLOR: Record<string, string> = { high: '#f87171', medium: '#fbbf24', low: '#4ade80' }
@@ -73,8 +72,8 @@ function DroppableColumn({ id, label, count, children }: { id: string; label: st
 
 // ── Board ─────────────────────────────────────────────────────────────────────
 
-export default function Board({ workItems, sprints, onUpdate, onDelete, onCreate }: Props) {
-  const [editing, setEditing] = useState<WorkItem | null | 'new'>(null)
+export default function Board({ workItems, sprints, onUpdate, onDelete }: Props) {
+  const [editing, setEditing] = useState<WorkItem | null>(null)
   const [dragging, setDragging] = useState<WorkItem | null>(null)
 
   const byStatus = (status: string) => workItems.filter(i => i.status === status)
@@ -96,7 +95,6 @@ export default function Board({ workItems, sprints, onUpdate, onDelete, onCreate
     <div style={wrapper}>
       <div style={toolbar}>
         <h2 style={heading}>Board</h2>
-        <button style={newBtn} onClick={() => setEditing('new')}>+ Add item</button>
       </div>
 
       <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -121,10 +119,10 @@ export default function Board({ workItems, sprints, onUpdate, onDelete, onCreate
 
       {editing !== null && (
         <WorkItemDialog
-          item={editing === 'new' ? null : editing}
+          item={editing}
           sprints={sprints}
-          onSave={editing === 'new' ? onCreate : d => onUpdate({ ...(editing as WorkItem), ...d })}
-          onDelete={editing !== 'new' ? () => onDelete(editing as WorkItem) : undefined}
+          onSave={d => onUpdate({ ...editing, ...d })}
+          onDelete={() => onDelete(editing)}
           onClose={() => setEditing(null)}
         />
       )}
@@ -135,7 +133,6 @@ export default function Board({ workItems, sprints, onUpdate, onDelete, onCreate
 const wrapper: React.CSSProperties  = { flex: 1, display: 'flex', flexDirection: 'column', padding: 24, overflow: 'hidden' }
 const toolbar: React.CSSProperties  = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }
 const heading: React.CSSProperties  = { fontSize: 20, fontWeight: 600, color: '#f8fafc' }
-const newBtn: React.CSSProperties   = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const columns: React.CSSProperties  = { display: 'flex', gap: 16, flex: 1, overflowX: 'auto', alignItems: 'flex-start' }
 const column: React.CSSProperties   = { minWidth: 240, flex: 1, borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }
 const colHeader: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }

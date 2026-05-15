@@ -4,6 +4,7 @@ type CreateType = 'item' | 'sprint' | 'project' | 'ai'
 
 interface Props {
   onCreate: (type: CreateType) => void
+  hideAi?: boolean
 }
 
 const OPTIONS: { type: CreateType; label: string; description: string }[] = [
@@ -13,7 +14,7 @@ const OPTIONS: { type: CreateType; label: string; description: string }[] = [
   { type: 'ai',      label: '✨ AI Planner', description: 'Describe a goal, Claude plans the work' },
 ]
 
-export default function GlobalCreateButton({ onCreate }: Props) {
+export default function GlobalCreateButton({ onCreate, hideAi = false }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -38,7 +39,7 @@ export default function GlobalCreateButton({ onCreate }: Props) {
 
       {open && (
         <div style={menu}>
-          {OPTIONS.map(o => (
+          {OPTIONS.filter(o => !(hideAi && o.type === 'ai')).map(o => (
             <button key={o.type} style={menuItem} onClick={() => pick(o.type)}>
               <span style={menuLabel}>{o.label}</span>
               <span style={menuDesc}>{o.description}</span>

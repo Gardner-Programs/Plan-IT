@@ -3,11 +3,13 @@ import type { Sprint, WorkItem } from '../types'
 import { SPRINT_STATUS_LABELS } from '../constants'
 import SprintDialog from './dialogs/SprintDialog'
 import WorkItemDialog from './dialogs/WorkItemDialog'
+import AiSprintDialog from './dialogs/AiSprintDialog'
 
 interface Props {
+  projectName: string
   sprints: Sprint[]
   workItems: WorkItem[]
-  onCreateSprint: (data: Omit<Sprint, 'id' | 'projectId'>) => Promise<void>
+  onCreateSprint: (data: Omit<Sprint, 'id' | 'projectId'>) => Promise<Sprint>
   onUpdateSprint: (sprint: Sprint) => Promise<void>
   onDeleteSprint: (sprint: Sprint) => Promise<void>
   onCreateItem: (data: Omit<WorkItem, 'id' | 'projectId'>) => Promise<void>
@@ -17,9 +19,10 @@ interface Props {
 
 const STATUS_COLOR: Record<string, string> = { planned: '#64748b', active: '#3b82f6', completed: '#22c55e' }
 
-export default function Sprints({ sprints, workItems, onCreateSprint, onUpdateSprint, onDeleteSprint, onCreateItem, onUpdateItem, onDeleteItem }: Props) {
+export default function Sprints({ projectName, sprints, workItems, onCreateSprint, onUpdateSprint, onDeleteSprint, onCreateItem, onUpdateItem, onDeleteItem }: Props) {
   const [editingSprint, setEditingSprint] = useState<Sprint | null | 'new'>(null)
   const [editingItem, setEditingItem] = useState<WorkItem | null | { sprintId: string }>(null)
+  const [showAiDialog, setShowAiDialog] = useState(false)
 
   const itemsForSprint = (sprintId: string) => workItems.filter(i => i.sprintId === sprintId)
 
@@ -30,11 +33,14 @@ export default function Sprints({ sprints, workItems, onCreateSprint, onUpdateSp
     <div style={wrapper}>
       <div style={toolbar}>
         <h2 style={heading}>Sprints</h2>
-        <button style={newBtn} onClick={() => setEditingSprint('new')}>+ New Sprint</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={aiBtn} onClick={() => setShowAiDialog(true)}>✨ Generate with AI</button>
+          <button style={newBtn} onClick={() => setEditingSprint('new')}>+ New Sprint</button>
+        </div>
       </div>
 
       {sprints.length === 0 && (
-        <p style={empty}>No sprints yet. Click "+ New Sprint" to plan your first one.</p>
+        <p style={empty}>No sprints yet. Create one manually or use AI to generate a full sprint plan.</p>
       )}
 
       <div style={list}>
@@ -83,10 +89,22 @@ export default function Sprints({ sprints, workItems, onCreateSprint, onUpdateSp
         })}
       </div>
 
+      {showAiDialog && (
+        <AiSprintDialog
+          projectName={projectName}
+          onCreateSprint={onCreateSprint}
+          onCreateItem={onCreateItem}
+          onClose={() => setShowAiDialog(false)}
+        />
+      )}
+
       {editingSprint !== null && (
         <SprintDialog
           sprint={editingSprint === 'new' ? null : editingSprint}
-          onSave={editingSprint === 'new' ? onCreateSprint : d => onUpdateSprint({ ...(editingSprint as Sprint), ...d })}
+          onSave={editingSprint === 'new'
+            ? async d => { await onCreateSprint(d) }
+            : d => onUpdateSprint({ ...(editingSprint as Sprint), ...d })
+          }
           onDelete={editingSprint !== 'new' ? () => onDeleteSprint(editingSprint as Sprint) : undefined}
           onClose={() => setEditingSprint(null)}
         />
@@ -113,6 +131,7 @@ const ITEM_STATUS_COLOR: Record<string, string> = { new: '#64748b', active: '#3b
 const wrapper: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', padding: 24, overflow: 'hidden' }
 const toolbar: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }
 const heading: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: '#f8fafc' }
+const aiBtn: React.CSSProperties = { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const newBtn: React.CSSProperties = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const list: React.CSSProperties = { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }
 const sprintCard: React.CSSProperties = { background: '#1e293b', border: '1px solid #334155', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }

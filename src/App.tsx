@@ -7,6 +7,7 @@ import Board from './components/Board'
 import Backlog from './components/Backlog'
 import Sprints from './components/Sprints'
 import CalendarView from './components/CalendarView'
+import QuickAddDialog from './components/dialogs/QuickAddDialog'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null)
@@ -17,6 +18,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('board')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
 
   // Load projects when user signs in
   useEffect(() => {
@@ -82,10 +84,12 @@ export default function App() {
   }
 
   // ── Work item actions ────────────────────────────────────────────────────
-  async function handleCreateItem(data: Omit<WorkItem, 'id' | 'projectId'>) {
-    if (!token || !selectedId) return
-    const item = await api.createWorkItem(token, selectedId, data)
-    setWorkItems(w => [...w, item])
+  async function handleCreateItem(data: Omit<WorkItem, 'id' | 'projectId'>, projectId?: string) {
+    const targetId = projectId ?? selectedId
+    if (!token || !targetId) return
+    const item = await api.createWorkItem(token, targetId, data)
+    // Only update local state when the item belongs to the currently loaded project
+    if (targetId === selectedId) setWorkItems(w => [...w, item])
   }
 
   async function handleUpdateItem(item: WorkItem) {
@@ -106,6 +110,16 @@ export default function App() {
 
   return (
     <div style={layout}>
+      {showQuickAdd && selectedId && token && (
+        <QuickAddDialog
+          projects={projects}
+          defaultProjectId={selectedId}
+          defaultSprints={sprints}
+          token={token}
+          onSave={handleCreateItem}
+          onClose={() => setShowQuickAdd(false)}
+        />
+      )}
       <ProjectList
         projects={projects}
         selectedId={selectedId}
@@ -143,6 +157,7 @@ export default function App() {
                 ))}
               </div>
               {loading && <span style={spinner}>Loading…</span>}
+              <button style={quickAddBtn} onClick={() => setShowQuickAdd(true)} title="Quick add work item">+ Add Item</button>
             </div>
 
             {tab === 'board' && (
@@ -199,6 +214,7 @@ const tabs: React.CSSProperties = { display: 'flex', gap: 4 }
 const tabBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#64748b', fontSize: 14, fontWeight: 500, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' }
 const tabActive: React.CSSProperties = { background: '#1e293b', color: '#f8fafc' }
 const spinner: React.CSSProperties = { marginLeft: 'auto', color: '#475569', fontSize: 13 }
+const quickAddBtn: React.CSSProperties = { marginLeft: 'auto', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const placeholder: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const placeholderText: React.CSSProperties = { color: '#475569', fontSize: 15 }
 const errorBar: React.CSSProperties = { background: '#7f1d1d', color: '#fca5a5', fontSize: 13, padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }

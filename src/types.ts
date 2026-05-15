@@ -3,6 +3,7 @@ export interface Project {
   name: string
   description: string
   color: string       // Google Calendar colorId
+  pos: number         // display order (stored in calendar description)
 }
 
 export interface Sprint {

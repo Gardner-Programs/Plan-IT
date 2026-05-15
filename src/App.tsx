@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Project, Sprint, WorkItem, Tab } from './types'
-import * as api from './api/calendar'
+import * as realApi from './api/calendar'
+import * as mockApi from './demo/mockApi'
 import { saveToken, loadToken, clearToken } from './utils/auth'
 import Login from './components/Login'
 import ProjectList from './components/ProjectList'
@@ -16,6 +17,7 @@ import AiProjectPlannerDialog from './components/dialogs/AiProjectPlannerDialog'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(loadToken)
+  const [isDemo, setIsDemo] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [sprints, setSprints] = useState<Sprint[]>([])
@@ -25,15 +27,18 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [createType, setCreateType] = useState<'item' | 'sprint' | 'project' | 'ai' | null>(null)
 
-  // Load projects when user signs in
+  const api = isDemo ? mockApi : realApi
+  const effectiveToken = isDemo ? 'DEMO' : token
+
+  // Load projects on sign-in or demo entry
   useEffect(() => {
-    if (!token) return
+    if (!effectiveToken) return
     setLoading(true)
-    api.listProjects(token)
-      .then(p => { setProjects(p); if (p.length > 0) setSelectedId(p[0].id) })
-      .catch(e => setError(e.message))
+    api.listProjects(effectiveToken)
+      .then((p: Project[]) => { setProjects(p); if (p.length > 0) setSelectedId(p[0].id) })
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [token, isDemo]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load sprints + work items when a project is selected
   const loadProjectData = useCallback(async (projectId: string, t: string) => {
@@ -47,100 +52,124 @@ export default function App() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [api]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (selectedId && token) loadProjectData(selectedId, token)
+    if (selectedId && effectiveToken) loadProjectData(selectedId, effectiveToken)
     else { setSprints([]); setWorkItems([]) }
-  }, [selectedId, token, loadProjectData])
+  }, [selectedId, token, isDemo]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Project actions ──────────────────────────────────────────────────────
   async function handleCreateProject(name: string, description: string, color: string) {
-    if (!token) return
-    const project = await api.createProject(token, name, description, color, projects.length)
+    if (!effectiveToken) return
+    const project = await api.createProject(effectiveToken, name, description, color, projects.length)
     setProjects(p => [...p, project])
     setSelectedId(project.id)
   }
 
   async function handleReorderProjects(reordered: Project[]) {
-    if (!token) return
+    if (!effectiveToken) return
     setProjects(reordered)
-    await api.reorderProjects(token, reordered)
+    await api.reorderProjects(effectiveToken, reordered)
   }
 
   async function handleDeleteProject(id: string) {
-    if (!token) return
-    await api.deleteProject(token, id)
+    if (!effectiveToken) return
+    await api.deleteProject(effectiveToken, id)
     setProjects(p => p.filter(x => x.id !== id))
     if (selectedId === id) setSelectedId(projects.find(x => x.id !== id)?.id ?? null)
   }
 
   // ── Sprint actions ───────────────────────────────────────────────────────
   async function handleCreateSprint(data: Omit<Sprint, 'id' | 'projectId'>): Promise<Sprint> {
-    if (!token || !selectedId) throw new Error('No project selected')
-    const sprint = await api.createSprint(token, selectedId, data)
+    if (!effectiveToken || !selectedId) throw new Error('No project selected')
+    const sprint = await api.createSprint(effectiveToken, selectedId, data)
     setSprints(s => [...s, sprint])
     return sprint
   }
 
   async function handleUpdateSprint(sprint: Sprint) {
-    if (!token || !selectedId) return
-    const updated = await api.updateSprint(token, selectedId, sprint)
+    if (!effectiveToken || !selectedId) return
+    const updated = await api.updateSprint(effectiveToken, selectedId, sprint)
     setSprints(s => s.map(x => x.id === sprint.id ? updated : x))
   }
 
   async function handleDeleteSprint(sprint: Sprint) {
-    if (!token || !selectedId) return
-    await api.deleteSprint(token, selectedId, sprint.id)
+    if (!effectiveToken || !selectedId) return
+    await api.deleteSprint(effectiveToken, selectedId, sprint.id)
     setSprints(s => s.filter(x => x.id !== sprint.id))
   }
 
   // ── Work item actions ────────────────────────────────────────────────────
   async function handleCreateItem(data: Omit<WorkItem, 'id' | 'projectId'>, projectId?: string) {
     const targetId = projectId ?? selectedId
-    if (!token || !targetId) return
-    const item = await api.createWorkItem(token, targetId, data)
-    // Only update local state when the item belongs to the currently loaded project
+    if (!effectiveToken || !targetId) return
+    const item = await api.createWorkItem(effectiveToken, targetId, data)
     if (targetId === selectedId) setWorkItems(w => [...w, item])
   }
 
   async function handleUpdateItem(item: WorkItem) {
-    if (!token || !selectedId) return
-    const updated = await api.updateWorkItem(token, selectedId, item)
+    if (!effectiveToken || !selectedId) return
+    const updated = await api.updateWorkItem(effectiveToken, selectedId, item)
     setWorkItems(w => w.map(x => x.id === item.id ? updated : x))
   }
 
   async function handleDeleteItem(item: WorkItem) {
-    if (!token || !selectedId) return
-    await api.deleteWorkItem(token, selectedId, item.id)
+    if (!effectiveToken || !selectedId) return
+    await api.deleteWorkItem(effectiveToken, selectedId, item.id)
     setWorkItems(w => w.filter(x => x.id !== item.id))
   }
 
-  if (!token) return <Login onLogin={(t, expiresIn) => { saveToken(t, expiresIn); setToken(t) }} />
-
-  const selectedProject = projects.find(p => p.id === selectedId)
-
+  // ── Global create helpers ────────────────────────────────────────────────
   async function handleCreateSprintGlobal(data: Omit<Sprint, 'id' | 'projectId'>, projectId: string) {
-    if (!token) return
-    const sprint = await api.createSprint(token, projectId, data)
+    if (!effectiveToken) return
+    const sprint = await api.createSprint(effectiveToken, projectId, data)
     if (projectId === selectedId) setSprints(s => [...s, sprint])
   }
 
   async function handleAiSprintCreate(data: Omit<Sprint, 'id' | 'projectId'>, projectId: string): Promise<Sprint> {
-    if (!token) throw new Error('Not authenticated')
-    const sprint = await api.createSprint(token, projectId, data)
+    if (!effectiveToken) throw new Error('Not authenticated')
+    const sprint = await api.createSprint(effectiveToken, projectId, data)
     if (projectId === selectedId) setSprints(s => [...s, sprint])
     return sprint
   }
 
   async function handleAiItemCreate(data: Omit<WorkItem, 'id' | 'projectId'>, projectId: string) {
-    if (!token) return
-    const item = await api.createWorkItem(token, projectId, data)
+    if (!effectiveToken) return
+    const item = await api.createWorkItem(effectiveToken, projectId, data)
     if (projectId === selectedId) setWorkItems(w => [...w, item])
   }
 
+  function handleSignOut() {
+    if (isDemo) {
+      setIsDemo(false)
+    } else {
+      clearToken()
+      setToken(null)
+    }
+    setProjects([])
+    setSelectedId(null)
+  }
+
+  if (!effectiveToken) return (
+    <Login
+      onLogin={(t, expiresIn) => { saveToken(t, expiresIn); setToken(t) }}
+      onDemo={() => setIsDemo(true)}
+    />
+  )
+
+  const selectedProject = projects.find(p => p.id === selectedId)
+
   return (
     <div style={layout}>
+      {isDemo && (
+        <div style={demoBanner}>
+          Demo mode — data resets on refresh.&nbsp;
+          <button style={demoBannerBtn} onClick={handleSignOut}>Exit demo</button>
+        </div>
+      )}
+
+      <div style={appRow}>
       {createType === 'item' && selectedId && (
         <WorkItemDialog
           item={null}
@@ -172,6 +201,7 @@ export default function App() {
           onClose={() => setCreateType(null)}
         />
       )}
+
       <ProjectList
         projects={projects}
         selectedId={selectedId}
@@ -179,7 +209,7 @@ export default function App() {
         onDelete={handleDeleteProject}
         onSelect={id => { setSelectedId(id); setTab('board') }}
         onReorder={handleReorderProjects}
-        onSignOut={() => { clearToken(); setToken(null); setProjects([]); setSelectedId(null) }}
+        onSignOut={handleSignOut}
       />
 
       <div style={main}>
@@ -210,7 +240,7 @@ export default function App() {
                 ))}
               </div>
               {loading && <span style={spinner}>Loading…</span>}
-              <GlobalCreateButton onCreate={setCreateType} />
+              <GlobalCreateButton onCreate={setCreateType} hideAi={isDemo} />
             </div>
 
             {tab === 'board' && (
@@ -234,6 +264,7 @@ export default function App() {
                 projectName={selectedProject.name}
                 sprints={sprints}
                 workItems={workItems}
+                isDemo={isDemo}
                 onCreateSprint={handleCreateSprint}
                 onUpdateSprint={handleUpdateSprint}
                 onDeleteSprint={handleDeleteSprint}
@@ -254,11 +285,15 @@ export default function App() {
           </>
         )}
       </div>
+      </div>
     </div>
   )
 }
 
-const layout: React.CSSProperties = { display: 'flex', height: '100vh', overflow: 'hidden' }
+const layout: React.CSSProperties = { display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }
+const appRow: React.CSSProperties = { display: 'flex', flex: 1, overflow: 'hidden' }
+const demoBanner: React.CSSProperties = { background: '#1e3a5f', color: '#93c5fd', fontSize: 13, padding: '6px 20px', textAlign: 'center', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }
+const demoBannerBtn: React.CSSProperties = { background: 'none', border: '1px solid #3b82f6', color: '#93c5fd', borderRadius: 4, padding: '2px 10px', fontSize: 12, cursor: 'pointer' }
 const main: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0f172a' }
 const tabBar: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderBottom: '1px solid #1e293b', background: '#0f172a', flexShrink: 0 }
 const projectTitle: React.CSSProperties = { fontSize: 15, fontWeight: 600, color: '#94a3b8', marginRight: 16 }

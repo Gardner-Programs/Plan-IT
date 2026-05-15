@@ -9,6 +9,7 @@ interface Props {
   projectName: string
   sprints: Sprint[]
   workItems: WorkItem[]
+  isDemo?: boolean
   onCreateSprint: (data: Omit<Sprint, 'id' | 'projectId'>) => Promise<Sprint>
   onUpdateSprint: (sprint: Sprint) => Promise<void>
   onDeleteSprint: (sprint: Sprint) => Promise<void>
@@ -19,7 +20,7 @@ interface Props {
 
 const STATUS_COLOR: Record<string, string> = { planned: '#64748b', active: '#3b82f6', completed: '#22c55e' }
 
-export default function Sprints({ projectName, sprints, workItems, onCreateSprint, onUpdateSprint, onDeleteSprint, onCreateItem, onUpdateItem, onDeleteItem }: Props) {
+export default function Sprints({ projectName, sprints, workItems, isDemo, onCreateSprint, onUpdateSprint, onDeleteSprint, onCreateItem, onUpdateItem, onDeleteItem }: Props) {
   const [editingSprint, setEditingSprint] = useState<Sprint | null | 'new'>(null)
   const [editingItem, setEditingItem] = useState<WorkItem | null | { sprintId: string }>(null)
   const [showAiDialog, setShowAiDialog] = useState(false)
@@ -34,7 +35,7 @@ export default function Sprints({ projectName, sprints, workItems, onCreateSprin
       <div style={toolbar}>
         <h2 style={heading}>Sprints</h2>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button style={aiBtn} onClick={() => setShowAiDialog(true)}>✨ Generate with AI</button>
+          {!isDemo && <button style={aiBtn} onClick={() => setShowAiDialog(true)}>✨ Generate with AI</button>}
           <button style={newBtn} onClick={() => setEditingSprint('new')}>+ New Sprint</button>
         </div>
       </div>

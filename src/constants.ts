@@ -50,3 +50,4 @@ export const STATUSES: WorkItemStatus[]  = ['new', 'active', 'resolved', 'closed
 export const PRIORITIES: Priority[]      = ['high', 'medium', 'low']
 export const ITEM_TYPES: WorkItemType[]  = ['feature', 'bug', 'task']
 export const SPRINT_STATUSES: SprintStatus[] = ['planned', 'active', 'completed']
+export const FIBONACCI_POINTS: number[] = [1, 2, 3, 5, 8, 13, 21]

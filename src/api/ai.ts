@@ -72,7 +72,7 @@ Respond with ONLY valid JSON matching this exact schema — no markdown, no expl
       "description": "string (1 sentence explaining the task)",
       "type": "feature" | "bug" | "task",
       "priority": "high" | "medium" | "low",
-      "storyPoints": number (1-13, fibonacci-ish: 1 2 3 5 8 13)
+      "storyPoints": number (must be one of: 1 2 3 5 8 13 21)
     }
   ]
 }`

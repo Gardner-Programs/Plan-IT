@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { WorkItem, Sprint } from '../../types'
-import { STATUSES, PRIORITIES, ITEM_TYPES, STATUS_LABELS, PRIORITY_LABELS, TYPE_LABELS } from '../../constants'
+import { STATUSES, PRIORITIES, ITEM_TYPES, STATUS_LABELS, PRIORITY_LABELS, TYPE_LABELS, FIBONACCI_POINTS } from '../../constants'
 
 interface Props {
   item?: WorkItem | null
@@ -74,16 +74,27 @@ export default function WorkItemDialog({ item, sprints, onSave, onDelete, onClos
             </label>
           </div>
 
-          <div style={row}>
-            <label style={{ ...label, flex: 1 }}>Sprint
-              <select style={input} value={form.sprintId} onChange={e => set('sprintId', e.target.value)}>
-                <option value="">Backlog (no sprint)</option>
-                {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </label>
-            <label style={{ ...label, width: 80 }}>Points
-              <input style={input} type="number" min={0} max={100} value={form.storyPoints} onChange={e => set('storyPoints', Number(e.target.value))} />
-            </label>
+          <label style={label}>Sprint
+            <select style={input} value={form.sprintId} onChange={e => set('sprintId', e.target.value)}>
+              <option value="">Backlog (no sprint)</option>
+              {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </label>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={label}>Story Points</span>
+            <div style={pointsPicker}>
+              {FIBONACCI_POINTS.map(pt => (
+                <button
+                  key={pt}
+                  type="button"
+                  style={{ ...pointsBtn, ...(form.storyPoints === pt ? pointsBtnActive : {}) }}
+                  onClick={() => set('storyPoints', form.storyPoints === pt ? 0 : pt)}
+                >
+                  {pt}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div style={row}>
@@ -128,3 +139,6 @@ const input: React.CSSProperties = { background: '#0f172a', border: '1px solid #
 const primaryBtn: React.CSSProperties = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }
 const ghostBtn: React.CSSProperties = { background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '8px 20px', fontSize: 14, cursor: 'pointer' }
 const deleteBtn: React.CSSProperties = { background: 'none', border: '1px solid #7f1d1d', color: '#f87171', borderRadius: 6, padding: '8px 16px', fontSize: 14, cursor: 'pointer' }
+const pointsPicker: React.CSSProperties = { display: 'flex', gap: 6 }
+const pointsBtn: React.CSSProperties = { flex: 1, background: '#0f172a', border: '1px solid #334155', borderRadius: 6, color: '#64748b', fontSize: 14, fontWeight: 600, padding: '8px 0', cursor: 'pointer' }
+const pointsBtnActive: React.CSSProperties = { background: '#1d4ed8', border: '1px solid #3b82f6', color: '#fff' }

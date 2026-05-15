@@ -2,9 +2,10 @@ import { useGoogleLogin } from '@react-oauth/google'
 
 interface Props {
   onLogin: (token: string, expiresIn: number) => void
+  onDemo: () => void
 }
 
-export default function Login({ onLogin }: Props) {
+export default function Login({ onLogin, onDemo }: Props) {
   const login = useGoogleLogin({
     scope: 'https://www.googleapis.com/auth/calendar',
     onSuccess: r => onLogin(r.access_token, r.expires_in),
@@ -25,6 +26,17 @@ export default function Login({ onLogin }: Props) {
           </svg>
           Sign in with Google
         </button>
+
+        <div style={styles.divider}>
+          <span style={styles.dividerLine} />
+          <span style={styles.dividerText}>or</span>
+          <span style={styles.dividerLine} />
+        </div>
+
+        <button style={styles.demoBtn} onClick={onDemo}>
+          Try Demo — no sign-in required
+        </button>
+
         <p style={styles.note}>
           Plan-IT stores your projects, sprints, and tasks as Google Calendar events —
           no separate database required.
@@ -77,6 +89,34 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: 'pointer',
     width: '100%',
+    marginBottom: 20,
+  },
+  divider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    margin: '4px 0',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    background: '#334155',
+  },
+  dividerText: {
+    color: '#475569',
+    fontSize: 13,
+  },
+  demoBtn: {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: '1px solid #334155',
+    borderRadius: 8,
+    padding: '12px 24px',
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#94a3b8',
+    cursor: 'pointer',
     marginBottom: 20,
   },
   note: {

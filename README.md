@@ -2,7 +2,7 @@
 
 A sprint planning and project management tool that uses **Google Calendar as its backend** — no server, no database. Projects, sprints, and work items are stored directly as Google Calendar events. Sign in with Google and your workspace lives in your own calendar.
 
-**[Try the live demo →](https://plan-it-demo.vercel.app)** — no sign-in required.
+**[Try the live demo →](https://plan-it-ruby.vercel.app)** — no sign-in required.
 
 ---
 

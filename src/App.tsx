@@ -6,6 +6,7 @@ import ProjectList from './components/ProjectList'
 import Board from './components/Board'
 import Backlog from './components/Backlog'
 import Sprints from './components/Sprints'
+import CalendarView from './components/CalendarView'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null)
@@ -131,7 +132,7 @@ export default function App() {
             <div style={tabBar}>
               <div style={projectTitle}>{selectedProject.name}</div>
               <div style={tabs}>
-                {(['board', 'backlog', 'sprints'] as Tab[]).map(t => (
+                {(['board', 'backlog', 'sprints', 'calendar'] as Tab[]).map(t => (
                   <button
                     key={t}
                     style={{ ...tabBtn, ...(tab === t ? tabActive : {}) }}
@@ -172,6 +173,15 @@ export default function App() {
                 onCreateItem={handleCreateItem}
                 onUpdateItem={handleUpdateItem}
                 onDeleteItem={handleDeleteItem}
+              />
+            )}
+            {tab === 'calendar' && (
+              <CalendarView
+                sprints={sprints}
+                workItems={workItems}
+                onCreate={handleCreateItem}
+                onUpdate={handleUpdateItem}
+                onDelete={handleDeleteItem}
               />
             )}
           </>

@@ -64,10 +64,11 @@ export default function App() {
   }
 
   // ── Sprint actions ───────────────────────────────────────────────────────
-  async function handleCreateSprint(data: Omit<Sprint, 'id' | 'projectId'>) {
-    if (!token || !selectedId) return
+  async function handleCreateSprint(data: Omit<Sprint, 'id' | 'projectId'>): Promise<Sprint> {
+    if (!token || !selectedId) throw new Error('No project selected')
     const sprint = await api.createSprint(token, selectedId, data)
     setSprints(s => [...s, sprint])
+    return sprint
   }
 
   async function handleUpdateSprint(sprint: Sprint) {
@@ -166,6 +167,7 @@ export default function App() {
             )}
             {tab === 'sprints' && (
               <Sprints
+                projectName={selectedProject.name}
                 sprints={sprints}
                 workItems={workItems}
                 onCreateSprint={handleCreateSprint}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Project, Sprint, WorkItem, Tab } from './types'
 import * as api from './api/calendar'
+import { saveToken, loadToken, clearToken } from './utils/auth'
 import Login from './components/Login'
 import ProjectList from './components/ProjectList'
 import Board from './components/Board'
@@ -9,7 +10,7 @@ import Sprints from './components/Sprints'
 import CalendarView from './components/CalendarView'
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(loadToken)
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [sprints, setSprints] = useState<Sprint[]>([])
@@ -100,7 +101,7 @@ export default function App() {
     setWorkItems(w => w.filter(x => x.id !== item.id))
   }
 
-  if (!token) return <Login onLogin={setToken} />
+  if (!token) return <Login onLogin={(t, expiresIn) => { saveToken(t, expiresIn); setToken(t) }} />
 
   const selectedProject = projects.find(p => p.id === selectedId)
 
@@ -112,7 +113,7 @@ export default function App() {
         onCreate={handleCreateProject}
         onDelete={handleDeleteProject}
         onSelect={id => { setSelectedId(id); setTab('board') }}
-        onSignOut={() => { setToken(null); setProjects([]); setSelectedId(null) }}
+        onSignOut={() => { clearToken(); setToken(null); setProjects([]); setSelectedId(null) }}
       />
 
       <div style={main}>

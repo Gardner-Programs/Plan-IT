@@ -1,13 +1,13 @@
 import { useGoogleLogin } from '@react-oauth/google'
 
 interface Props {
-  onLogin: (token: string) => void
+  onLogin: (token: string, expiresIn: number) => void
 }
 
 export default function Login({ onLogin }: Props) {
   const login = useGoogleLogin({
     scope: 'https://www.googleapis.com/auth/calendar',
-    onSuccess: r => onLogin(r.access_token),
+    onSuccess: r => onLogin(r.access_token, r.expires_in),
     onError: () => alert('Google sign-in failed. Check your client ID configuration.'),
   })
 

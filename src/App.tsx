@@ -12,6 +12,7 @@ import GlobalCreateButton from './components/GlobalCreateButton'
 import WorkItemDialog from './components/dialogs/WorkItemDialog'
 import NewSprintDialog from './components/dialogs/NewSprintDialog'
 import NewProjectDialog from './components/dialogs/NewProjectDialog'
+import AiProjectPlannerDialog from './components/dialogs/AiProjectPlannerDialog'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(loadToken)
@@ -22,7 +23,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('board')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [createType, setCreateType] = useState<'item' | 'sprint' | 'project' | null>(null)
+  const [createType, setCreateType] = useState<'item' | 'sprint' | 'project' | 'ai' | null>(null)
 
   // Load projects when user signs in
   useEffect(() => {
@@ -125,6 +126,19 @@ export default function App() {
     if (projectId === selectedId) setSprints(s => [...s, sprint])
   }
 
+  async function handleAiSprintCreate(data: Omit<Sprint, 'id' | 'projectId'>, projectId: string): Promise<Sprint> {
+    if (!token) throw new Error('Not authenticated')
+    const sprint = await api.createSprint(token, projectId, data)
+    if (projectId === selectedId) setSprints(s => [...s, sprint])
+    return sprint
+  }
+
+  async function handleAiItemCreate(data: Omit<WorkItem, 'id' | 'projectId'>, projectId: string) {
+    if (!token) return
+    const item = await api.createWorkItem(token, projectId, data)
+    if (projectId === selectedId) setWorkItems(w => [...w, item])
+  }
+
   return (
     <div style={layout}>
       {createType === 'item' && selectedId && (
@@ -146,6 +160,15 @@ export default function App() {
       {createType === 'project' && (
         <NewProjectDialog
           onCreate={handleCreateProject}
+          onClose={() => setCreateType(null)}
+        />
+      )}
+      {createType === 'ai' && selectedId && (
+        <AiProjectPlannerDialog
+          projects={projects}
+          defaultProjectId={selectedId}
+          onCreateSprint={handleAiSprintCreate}
+          onCreateItem={handleAiItemCreate}
           onClose={() => setCreateType(null)}
         />
       )}

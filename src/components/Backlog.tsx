@@ -8,13 +8,12 @@ interface Props {
   sprints: Sprint[]
   onUpdate: (item: WorkItem) => Promise<void>
   onDelete: (item: WorkItem) => Promise<void>
-  onCreate: (data: Omit<WorkItem, 'id' | 'projectId'>) => Promise<void>
 }
 
 const PRIORITY_DOT: Record<string, string> = { high: '#f87171', medium: '#fbbf24', low: '#4ade80' }
 
-export default function Backlog({ workItems, sprints, onUpdate, onDelete, onCreate }: Props) {
-  const [editing, setEditing] = useState<WorkItem | null | 'new'>(null)
+export default function Backlog({ workItems, sprints, onUpdate, onDelete }: Props) {
+  const [editing, setEditing] = useState<WorkItem | null>(null)
   const [filterSprint, setFilterSprint] = useState<string>('all')
 
   const sprintName = (id: string) => sprints.find(s => s.id === id)?.name ?? 'Backlog'
@@ -35,7 +34,6 @@ export default function Backlog({ workItems, sprints, onUpdate, onDelete, onCrea
             <option value="backlog">Backlog only</option>
             {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <button style={newBtn} onClick={() => setEditing('new')}>+ Add item</button>
         </div>
       </div>
 
@@ -74,10 +72,10 @@ export default function Backlog({ workItems, sprints, onUpdate, onDelete, onCrea
 
       {editing !== null && (
         <WorkItemDialog
-          item={editing === 'new' ? null : editing}
+          item={editing}
           sprints={sprints}
-          onSave={editing === 'new' ? onCreate : d => onUpdate({ ...(editing as WorkItem), ...d })}
-          onDelete={editing !== 'new' ? () => onDelete(editing as WorkItem) : undefined}
+          onSave={d => onUpdate({ ...editing, ...d })}
+          onDelete={() => onDelete(editing)}
           onClose={() => setEditing(null)}
         />
       )}
@@ -91,7 +89,6 @@ const STATUS_TEXT: Record<string, string> = { new: '#93c5fd', active: '#60a5fa',
 const wrapper: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', padding: 24, overflow: 'hidden' }
 const toolbar: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }
 const heading: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: '#f8fafc' }
-const newBtn: React.CSSProperties = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 const filterSelect: React.CSSProperties = { background: '#1e293b', border: '1px solid #334155', borderRadius: 6, color: '#94a3b8', fontSize: 13, padding: '7px 10px' }
 const table: React.CSSProperties = { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }
 const tableHeader: React.CSSProperties = { display: 'flex', alignItems: 'center', padding: '0 12px 8px', borderBottom: '1px solid #1e293b' }

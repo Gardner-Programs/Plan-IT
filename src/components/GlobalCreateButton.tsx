@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 
-type CreateType = 'item' | 'sprint' | 'project'
+type CreateType = 'item' | 'sprint' | 'project' | 'ai'
 
 interface Props {
   onCreate: (type: CreateType) => void
 }
 
 const OPTIONS: { type: CreateType; label: string; description: string }[] = [
-  { type: 'item',    label: 'Work Item',  description: 'Task, feature, or bug' },
-  { type: 'sprint',  label: 'Sprint',     description: 'Timebox for a set of work' },
-  { type: 'project', label: 'Project',    description: 'New calendar-backed project' },
+  { type: 'item',    label: 'Work Item',   description: 'Task, feature, or bug' },
+  { type: 'sprint',  label: 'Sprint',      description: 'Timebox for a set of work' },
+  { type: 'project', label: 'Project',     description: 'New calendar-backed project' },
+  { type: 'ai',      label: '✨ AI Planner', description: 'Describe a goal, Claude plans the work' },
 ]
 
 export default function GlobalCreateButton({ onCreate }: Props) {

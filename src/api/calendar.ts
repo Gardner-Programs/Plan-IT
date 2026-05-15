@@ -2,6 +2,7 @@ import type { Project, Sprint, WorkItem, SprintStatus, WorkItemStatus, WorkItemT
 
 const BASE = 'https://www.googleapis.com/calendar/v3'
 const PLANIT_TAG = '[Plan-IT]'
+const POS_RE = /\[pos:(\d+)\]/
 
 function headers(token: string) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -28,16 +29,26 @@ export async function listProjects(token: string): Promise<Project[]> {
   return (data.items ?? [])
     .filter(c => c.description?.startsWith(PLANIT_TAG))
     .map(calToProject)
+    .sort((a, b) => a.pos - b.pos)
 }
 
-export async function createProject(token: string, name: string, description: string, color: string): Promise<Project> {
+export async function createProject(token: string, name: string, description: string, color: string, pos: number): Promise<Project> {
   const cal = await req<CalendarEntry>(token, 'POST', '/calendars', {
     summary: name,
-    description: `${PLANIT_TAG} ${description}`,
+    description: buildDescription(description, pos),
   })
-  // Set color via calendar list patch
   await req(token, 'PATCH', `/users/me/calendarList/${encodeURIComponent(cal.id)}`, { colorId: color })
-  return { id: cal.id, name, description, color }
+  return { id: cal.id, name, description, color, pos }
+}
+
+export async function reorderProjects(token: string, projects: Project[]): Promise<void> {
+  await Promise.all(
+    projects.map((p, i) =>
+      req(token, 'PATCH', `/calendars/${encodeURIComponent(p.id)}`, {
+        description: buildDescription(p.description, i),
+      })
+    )
+  )
 }
 
 export async function deleteProject(token: string, projectId: string): Promise<void> {
@@ -169,12 +180,21 @@ interface CalendarEvent {
   extendedProperties?: { private?: Record<string, string> }
 }
 
+function buildDescription(userDescription: string, pos: number): string {
+  return `${PLANIT_TAG}[pos:${pos}] ${userDescription}`
+}
+
 function calToProject(c: CalendarListEntry): Project {
+  const raw = c.description ?? ''
+  const posMatch = POS_RE.exec(raw)
+  const pos = posMatch ? parseInt(posMatch[1], 10) : 9999
+  const description = raw.replace(PLANIT_TAG, '').replace(POS_RE, '').trim()
   return {
     id: c.id,
     name: c.summary,
-    description: (c.description ?? '').replace(`${PLANIT_TAG} `, ''),
+    description,
     color: c.colorId ?? '1',
+    pos,
   }
 }
 

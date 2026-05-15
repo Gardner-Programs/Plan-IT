@@ -50,9 +50,15 @@ export default function App() {
   // ── Project actions ──────────────────────────────────────────────────────
   async function handleCreateProject(name: string, description: string, color: string) {
     if (!token) return
-    const project = await api.createProject(token, name, description, color)
+    const project = await api.createProject(token, name, description, color, projects.length)
     setProjects(p => [...p, project])
     setSelectedId(project.id)
+  }
+
+  async function handleReorderProjects(reordered: Project[]) {
+    if (!token) return
+    setProjects(reordered)
+    await api.reorderProjects(token, reordered)
   }
 
   async function handleDeleteProject(id: string) {
@@ -112,6 +118,7 @@ export default function App() {
         onCreate={handleCreateProject}
         onDelete={handleDeleteProject}
         onSelect={id => { setSelectedId(id); setTab('board') }}
+        onReorder={handleReorderProjects}
         onSignOut={() => { setToken(null); setProjects([]); setSelectedId(null) }}
       />
 

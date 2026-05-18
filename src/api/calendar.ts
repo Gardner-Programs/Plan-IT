@@ -220,7 +220,7 @@ function eventToWorkItem(ev: CalendarEvent, projectId: string): WorkItem {
     title: ev.summary ?? '',
     description: ev.description ?? '',
     type: (p.type as WorkItemType) ?? 'task',
-    status: (p.status as WorkItemStatus) ?? 'new',
+    status: (p.status as WorkItemStatus) ?? 'planned',
     priority: (p.priority as Priority) ?? 'medium',
     storyPoints: Number(p.storyPoints ?? 0),
     assignee: p.assignee ?? '',

@@ -45,7 +45,7 @@ export default function AiSprintDialog({ projectName, onCreateSprint, onCreateIt
       const sprint = await onCreateSprint(plan.sprint)
       await Promise.all(
         plan.workItems.map(item =>
-          onCreateItem({ ...item, sprintId: sprint.id, status: 'new', assignee: '', deadline: '' })
+          onCreateItem({ ...item, sprintId: sprint.id, status: 'planned', assignee: '', deadline: '' })
         )
       )
       onClose()

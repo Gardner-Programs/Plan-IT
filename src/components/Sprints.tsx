@@ -47,7 +47,7 @@ export default function Sprints({ projectName, sprints, workItems, isDemo, onCre
       <div style={list}>
         {sprints.map(sprint => {
           const items = itemsForSprint(sprint.id)
-          const done = items.filter(i => i.status === 'resolved' || i.status === 'closed').length
+          const done = items.filter(i => i.status === 'resolved').length
           const pct = items.length > 0 ? Math.round((done / items.length) * 100) : 0
 
           return (

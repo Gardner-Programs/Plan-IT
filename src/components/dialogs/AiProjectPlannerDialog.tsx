@@ -75,7 +75,7 @@ export default function AiProjectPlannerDialog({
         await Promise.all(
           workItems.map(item =>
             onCreateItem(
-              { ...item, sprintId: sprint.id, status: 'new', assignee: '', deadline: '' },
+              { ...item, sprintId: sprint.id, status: 'planned', assignee: '', deadline: '' },
               projectId
             )
           )

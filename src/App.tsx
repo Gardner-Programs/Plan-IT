@@ -3,6 +3,7 @@ import type { Project, Sprint, WorkItem, Tab } from './types'
 import * as realApi from './api/calendar'
 import * as mockApi from './demo/mockApi'
 import { saveToken, loadToken, clearToken } from './utils/auth'
+import { useLocalStorage } from './utils/useLocalStorage'
 import Login from './components/Login'
 import ProjectList from './components/ProjectList'
 import Board from './components/Board'
@@ -19,10 +20,10 @@ export default function App() {
   const [token, setToken] = useState<string | null>(loadToken)
   const [isDemo, setIsDemo] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useLocalStorage<string | null>('planit:selectedProjectId', null)
   const [sprints, setSprints] = useState<Sprint[]>([])
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
-  const [tab, setTab] = useState<Tab>('board')
+  const [tab, setTab] = useLocalStorage<Tab>('planit:tab', 'board')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createType, setCreateType] = useState<'item' | 'sprint' | 'project' | 'ai' | null>(null)
@@ -35,7 +36,11 @@ export default function App() {
     if (!effectiveToken) return
     setLoading(true)
     api.listProjects(effectiveToken)
-      .then((p: Project[]) => { setProjects(p); if (p.length > 0) setSelectedId(p[0].id) })
+      .then((p: Project[]) => {
+        setProjects(p)
+        if (p.length === 0) { setSelectedId(null); return }
+        if (!selectedId || !p.some(proj => proj.id === selectedId)) setSelectedId(p[0].id)
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [token, isDemo]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -110,8 +115,15 @@ export default function App() {
 
   async function handleUpdateItem(item: WorkItem) {
     if (!effectiveToken || !selectedId) return
-    const updated = await api.updateWorkItem(effectiveToken, selectedId, item)
-    setWorkItems(w => w.map(x => x.id === item.id ? updated : x))
+    const original = workItems.find(x => x.id === item.id)
+    setWorkItems(w => w.map(x => x.id === item.id ? item : x))
+    try {
+      const updated = await api.updateWorkItem(effectiveToken, item.projectId, item)
+      setWorkItems(w => w.map(x => x.id === item.id ? updated : x))
+    } catch (e) {
+      if (original) setWorkItems(w => w.map(x => x.id === item.id ? original : x))
+      setError(e instanceof Error ? e.message : 'Failed to update item')
+    }
   }
 
   async function handleDeleteItem(item: WorkItem) {

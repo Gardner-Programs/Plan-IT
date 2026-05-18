@@ -44,6 +44,7 @@ export default function Backlog({ workItems, sprints, onUpdate, onDelete }: Prop
           <span style={{ ...th, flex: 1 }}>Status</span>
           <span style={{ ...th, flex: 1 }}>Priority</span>
           <span style={{ ...th, flex: 1 }}>Sprint</span>
+          <span style={{ ...th, flex: 1 }}>Deadline</span>
           <span style={{ ...th, width: 40, textAlign: 'center' }}>Pts</span>
         </div>
 
@@ -65,6 +66,9 @@ export default function Backlog({ workItems, sprints, onUpdate, onDelete }: Prop
               {PRIORITY_LABELS[item.priority]}
             </span>
             <span style={{ ...td, flex: 1, color: '#64748b', fontSize: 12 }}>{sprintName(item.sprintId)}</span>
+            <span style={{ ...td, flex: 1, fontSize: 12, color: item.deadline && item.deadline < today && item.status !== 'resolved' ? '#f87171' : '#64748b' }}>
+              {item.deadline || '—'}
+            </span>
             <span style={{ ...td, width: 40, textAlign: 'center', color: '#64748b' }}>{item.storyPoints || '—'}</span>
           </div>
         ))}
@@ -83,8 +87,9 @@ export default function Backlog({ workItems, sprints, onUpdate, onDelete }: Prop
   )
 }
 
-const STATUS_BG: Record<string, string> = { new: '#1e3a5f', active: '#1e3a5f', resolved: '#14532d', closed: '#1e293b' }
-const STATUS_TEXT: Record<string, string> = { new: '#93c5fd', active: '#60a5fa', resolved: '#4ade80', closed: '#64748b' }
+const today = new Date().toISOString().slice(0, 10)
+const STATUS_BG: Record<string, string>   = { planned: '#1e293b', active: '#1e3a5f', resolved: '#14532d' }
+const STATUS_TEXT: Record<string, string> = { planned: '#94a3b8', active: '#60a5fa', resolved: '#4ade80' }
 
 const wrapper: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', padding: 24, overflow: 'hidden' }
 const toolbar: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }

@@ -31,7 +31,7 @@ export interface WorkItem {
 }
 
 export type SprintStatus = 'planned' | 'active' | 'completed'
-export type WorkItemStatus = 'new' | 'active' | 'resolved' | 'closed'
+export type WorkItemStatus = 'planned' | 'active' | 'resolved'
 export type WorkItemType = 'feature' | 'bug' | 'task'
 export type Priority = 'high' | 'medium' | 'low'
 export type Tab = 'board' | 'backlog' | 'sprints' | 'calendar'

@@ -15,10 +15,9 @@ export const CALENDAR_COLORS: { id: string; label: string; hex: string }[] = [
 ]
 
 export const STATUS_LABELS: Record<WorkItemStatus, string> = {
-  new: 'New',
+  planned: 'Planned',
   active: 'Active',
   resolved: 'Resolved',
-  closed: 'Closed',
 }
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
@@ -40,13 +39,12 @@ export const SPRINT_STATUS_LABELS: Record<SprintStatus, string> = {
 }
 
 export const BOARD_COLUMNS: { id: WorkItemStatus; label: string }[] = [
-  { id: 'new',      label: 'New' },
+  { id: 'planned',  label: 'Planned' },
   { id: 'active',   label: 'Active' },
   { id: 'resolved', label: 'Resolved' },
-  { id: 'closed',   label: 'Closed' },
 ]
 
-export const STATUSES: WorkItemStatus[]  = ['new', 'active', 'resolved', 'closed']
+export const STATUSES: WorkItemStatus[]  = ['planned', 'active', 'resolved']
 export const PRIORITIES: Priority[]      = ['high', 'medium', 'low']
 export const ITEM_TYPES: WorkItemType[]  = ['feature', 'bug', 'task']
 export const SPRINT_STATUSES: SprintStatus[] = ['planned', 'active', 'completed']

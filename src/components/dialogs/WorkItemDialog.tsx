@@ -15,7 +15,7 @@ const EMPTY: Omit<WorkItem, 'id' | 'projectId'> = {
   title: '',
   description: '',
   type: 'task',
-  status: 'new',
+  status: 'planned',
   priority: 'medium',
   storyPoints: 0,
   assignee: '',

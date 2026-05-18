@@ -11,7 +11,7 @@ const OPTIONS: { type: CreateType; label: string; description: string }[] = [
   { type: 'item',    label: 'Work Item',   description: 'Task, feature, or bug' },
   { type: 'sprint',  label: 'Sprint',      description: 'Timebox for a set of work' },
   { type: 'project', label: 'Project',     description: 'New calendar-backed project' },
-  { type: 'ai',      label: '✨ AI Planner', description: 'Describe a goal, Claude plans the work' },
+  { type: 'ai',      label: '✨ AI Assistant', description: 'Tell Claude what to add, change, or remove' },
 ]
 
 export default function GlobalCreateButton({ onCreate, hideAi = false }: Props) {

@@ -13,7 +13,7 @@ import GlobalCreateButton from './components/GlobalCreateButton'
 import WorkItemDialog from './components/dialogs/WorkItemDialog'
 import NewSprintDialog from './components/dialogs/NewSprintDialog'
 import NewProjectDialog from './components/dialogs/NewProjectDialog'
-import AiProjectPlannerDialog from './components/dialogs/AiProjectPlannerDialog'
+import AiAssistantDialog from './components/dialogs/AiAssistantDialog'
 
 export default function App() {
   const [token, setToken] = useState<string | null>(loadToken)
@@ -127,17 +127,49 @@ export default function App() {
     if (projectId === selectedId) setSprints(s => [...s, sprint])
   }
 
-  async function handleAiSprintCreate(data: Omit<Sprint, 'id' | 'projectId'>, projectId: string): Promise<Sprint> {
+  async function handleAiItemCreate(projectId: string, data: Omit<WorkItem, 'id' | 'projectId'>): Promise<WorkItem> {
+    if (!effectiveToken) throw new Error('Not authenticated')
+    const item = await api.createWorkItem(effectiveToken, projectId, data)
+    if (projectId === selectedId) setWorkItems(w => [...w, item])
+    return item
+  }
+
+  async function handleAiUpdateItem(item: WorkItem): Promise<void> {
+    if (!effectiveToken) return
+    const updated = await api.updateWorkItem(effectiveToken, item.projectId, item)
+    if (item.projectId === selectedId) setWorkItems(w => w.map(x => x.id === item.id ? updated : x))
+  }
+
+  async function handleAiDeleteItem(item: WorkItem): Promise<void> {
+    if (!effectiveToken) return
+    await api.deleteWorkItem(effectiveToken, item.projectId, item.id)
+    if (item.projectId === selectedId) setWorkItems(w => w.filter(x => x.id !== item.id))
+  }
+
+  async function handleAiCreateProject(name: string, description: string, color: string): Promise<Project> {
+    if (!effectiveToken) throw new Error('Not authenticated')
+    const project = await api.createProject(effectiveToken, name, description, color, projects.length)
+    setProjects(p => [...p, project])
+    return project
+  }
+
+  async function handleAiCreateSprint(projectId: string, data: Omit<Sprint, 'id' | 'projectId'>): Promise<Sprint> {
     if (!effectiveToken) throw new Error('Not authenticated')
     const sprint = await api.createSprint(effectiveToken, projectId, data)
     if (projectId === selectedId) setSprints(s => [...s, sprint])
     return sprint
   }
 
-  async function handleAiItemCreate(data: Omit<WorkItem, 'id' | 'projectId'>, projectId: string) {
+  async function handleAiUpdateSprint(sprint: Sprint): Promise<void> {
     if (!effectiveToken) return
-    const item = await api.createWorkItem(effectiveToken, projectId, data)
-    if (projectId === selectedId) setWorkItems(w => [...w, item])
+    const updated = await api.updateSprint(effectiveToken, sprint.projectId, sprint)
+    if (sprint.projectId === selectedId) setSprints(s => s.map(x => x.id === sprint.id ? updated : x))
+  }
+
+  async function handleAiDeleteSprint(sprint: Sprint): Promise<void> {
+    if (!effectiveToken) return
+    await api.deleteSprint(effectiveToken, sprint.projectId, sprint.id)
+    if (sprint.projectId === selectedId) setSprints(s => s.filter(x => x.id !== sprint.id))
   }
 
   function handleSignOut() {
@@ -193,11 +225,17 @@ export default function App() {
         />
       )}
       {createType === 'ai' && selectedId && (
-        <AiProjectPlannerDialog
+        <AiAssistantDialog
           projects={projects}
-          defaultProjectId={selectedId}
-          onCreateSprint={handleAiSprintCreate}
-          onCreateItem={handleAiItemCreate}
+          selectedProjectId={selectedId}
+          fetchProjectData={(projectId) => api.listProjectEvents(effectiveToken!, projectId)}
+          onCreateProject={handleAiCreateProject}
+          onCreateSprint={handleAiCreateSprint}
+          onUpdateSprint={handleAiUpdateSprint}
+          onDeleteSprint={handleAiDeleteSprint}
+          onCreateWorkItem={handleAiItemCreate}
+          onUpdateWorkItem={handleAiUpdateItem}
+          onDeleteWorkItem={handleAiDeleteItem}
           onClose={() => setCreateType(null)}
         />
       )}

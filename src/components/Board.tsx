@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useLocalStorage } from '../utils/useLocalStorage'
+
+type SortBy = 'none' | 'date' | 'priority' | 'points'
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 import {
   DndContext,
   DragEndEvent,
@@ -39,6 +43,7 @@ function DraggableCard({ item, onClick }: { item: WorkItem; onClick: () => void 
 }
 
 function CardContent({ item, listeners, attributes }: { item: WorkItem; listeners?: object; attributes?: object }) {
+  const isOverdue = item.deadline && item.deadline < new Date().toISOString().slice(0, 10) && item.status !== 'resolved'
   return (
     <>
       <div style={cardRow}>
@@ -50,6 +55,11 @@ function CardContent({ item, listeners, attributes }: { item: WorkItem; listener
         <span style={{ ...badge, color: PRIORITY_COLOR[item.priority] }}>{PRIORITY_LABELS[item.priority]}</span>
         {item.storyPoints > 0 && <span style={pointsBadge}>{item.storyPoints}pt</span>}
       </div>
+      {item.deadline && (
+        <div style={{ ...deadlineTag, color: isOverdue ? '#f87171' : '#64748b' }}>
+          {isOverdue ? '⚠ ' : ''}{item.deadline}
+        </div>
+      )}
       {item.assignee && <div style={assigneeTag}>{item.assignee}</div>}
     </>
   )
@@ -75,8 +85,23 @@ function DroppableColumn({ id, label, count, children }: { id: string; label: st
 export default function Board({ workItems, sprints, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState<WorkItem | null>(null)
   const [dragging, setDragging] = useState<WorkItem | null>(null)
+  const [sortBy, setSortBy] = useLocalStorage<SortBy>('planit:boardSort', 'none')
 
-  const byStatus = (status: string) => workItems.filter(i => i.status === status)
+  function sortedItems(items: WorkItem[]) {
+    if (sortBy === 'date') return [...items].sort((a, b) => {
+      if (!a.deadline && !b.deadline) return 0
+      if (!a.deadline) return 1
+      if (!b.deadline) return -1
+      return a.deadline.localeCompare(b.deadline)
+    })
+    if (sortBy === 'priority') return [...items].sort((a, b) =>
+      (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9)
+    )
+    if (sortBy === 'points') return [...items].sort((a, b) => a.storyPoints - b.storyPoints)
+    return items
+  }
+
+  const byStatus = (status: string) => sortedItems(workItems.filter(i => i.status === status))
 
   function handleDragStart(e: DragStartEvent) {
     setDragging(workItems.find(i => i.id === e.active.id) ?? null)
@@ -95,6 +120,12 @@ export default function Board({ workItems, sprints, onUpdate, onDelete }: Props)
     <div style={wrapper}>
       <div style={toolbar}>
         <h2 style={heading}>Board</h2>
+        <select style={sortSelect} value={sortBy} onChange={e => setSortBy(e.target.value as SortBy)}>
+          <option value="none">Sort: Default</option>
+          <option value="date">Sort: By Date</option>
+          <option value="priority">Sort: By Priority</option>
+          <option value="points">Sort: By Story Points</option>
+        </select>
       </div>
 
       <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -146,4 +177,6 @@ const cardTitle: React.CSSProperties = { fontSize: 14, color: '#e2e8f0', lineHei
 const cardMeta: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap' }
 const badge: React.CSSProperties    = { fontSize: 11, fontWeight: 600 }
 const pointsBadge: React.CSSProperties = { fontSize: 11, color: '#64748b', marginLeft: 'auto' }
-const assigneeTag: React.CSSProperties = { fontSize: 11, color: '#475569', borderTop: '1px solid #334155', paddingTop: 6, marginTop: 2 }
+const assigneeTag: React.CSSProperties  = { fontSize: 11, color: '#475569', borderTop: '1px solid #334155', paddingTop: 6, marginTop: 2 }
+const deadlineTag: React.CSSProperties  = { fontSize: 11, marginTop: 2 }
+const sortSelect: React.CSSProperties   = { background: '#1e293b', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', outline: 'none' }

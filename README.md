@@ -1,5 +1,7 @@
 # Plan-IT 🪐
 
+[![CI](https://github.com/Gardner-Programs/Plan-IT/actions/workflows/ci.yml/badge.svg)](https://github.com/Gardner-Programs/Plan-IT/actions/workflows/ci.yml)
+
 A sprint planning and project management tool that uses **Google Calendar as its entire backend** — no server, no database, no infrastructure to maintain. Projects, sprints, and work items live as calendar events in your own Google account.
 
 **[Try the live demo →](https://plan-it-ruby.vercel.app)** — no sign-in required.
